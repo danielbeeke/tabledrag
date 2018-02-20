@@ -4,6 +4,7 @@
 export default class AttributesConnector {
   parseRow (row) {
     return {
+      title: row.innerText,
       weight: parseInt(row.dataset.weight),
       depth: parseInt(row.dataset.depth)
     }
