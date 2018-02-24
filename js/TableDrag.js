@@ -2,7 +2,9 @@ import AttributesConnector from './TableDrag.attributesConnector.js';
 import Row from './TableDrag.row.js';
 
 let defaultOptions = {
-  connector: AttributesConnector
+  connector: AttributesConnector,
+  dragCssClass: 'is-dragged',
+  nestingDragDistance: 100
 };
 
 export default class TableDrag {
@@ -35,17 +37,32 @@ export default class TableDrag {
   dragOver (event) {
     event.preventDefault();
 
-    let tableRowId = event.dataTransfer.getData('tableRow');
-    let draggedRow = this.getRowById(tableRowId);
-
-    let filteredRowAbove = this.rows.find((row) => row.rect.top < event.pageY && row.rect.top + (row.rect.height / 2) > event.pageY);
-    let filteredRowBelow = this.rows.find((row) => row.rect.top + (row.rect.height / 2) < event.pageY && row.rect.top + row.rect.height > event.pageY);
-
     let tableData = this.toData();
     let cleanTableData = this.toData();
 
+    let tableRowId = event.dataTransfer.getData('tableRow');
+    let draggedRow = this.getRowById(tableRowId);
+    let currentTableDataRow = tableData.find((row) => row.id === draggedRow.data.id);
+
+    /**
+     * Horizontal movement.
+     */
+
+    let times = Math.floor((event.pageX - draggedRow.startX) / this.options.nestingDragDistance);
+
+    // Indenting
+    if (draggedRow.data.depth !== draggedRow.startDepth + times) {
+      draggedRow.data.depth = draggedRow.startDepth + times;
+      draggedRow.writeOut();
+    }
+
+    /**
+     * vertical movement.
+     */
+    let filteredRowAbove = this.rows.find((row) => row.rect.top < event.pageY && row.rect.top + (row.rect.height / 2) > event.pageY);
+    let filteredRowBelow = this.rows.find((row) => row.rect.top + (row.rect.height / 2) < event.pageY && row.rect.top + row.rect.height > event.pageY);
+
     if (filteredRowAbove && draggedRow !== filteredRowAbove) {
-      let currentTableDataRow = tableData.find((row) => row.id === draggedRow.data.id);
       currentTableDataRow.weight = filteredRowAbove.data.weight - 0.5;
       this.prepareTableDataForValidation(tableData);
 
@@ -56,7 +73,6 @@ export default class TableDrag {
     }
 
     if (filteredRowBelow && draggedRow !== filteredRowBelow) {
-      let currentTableDataRow = tableData.find((row) => row.id === draggedRow.data.id);
       currentTableDataRow.weight = filteredRowBelow.data.weight + 0.5;
       this.prepareTableDataForValidation(tableData);
 

@@ -9,4 +9,9 @@ export default class AttributesConnector {
       depth: parseInt(row.dataset.depth)
     }
   }
+
+  writeOut (row, data) {
+    row.dataset.weight = data.weight;
+    row.dataset.depth = data.depth;
+  }
 }

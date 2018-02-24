@@ -9,14 +9,13 @@
   tr {
     cursor: pointer;
     background-color: transparent;
-    transition: .3s background-color ease-in-out;
+    transition: .1s background-color ease-in-out;
     user-select: none;
 
     &.is-dragged {
       background-color: red;
     }
 
-    /*
     &[data-depth="0"] td:first-child {
       padding-left: 30px;
     }
@@ -32,6 +31,5 @@
     &[data-depth="3"] td:first-child {
       padding-left: 90px;
     }
-    */
   }
 }
