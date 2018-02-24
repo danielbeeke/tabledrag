@@ -41,17 +41,55 @@ export default class TableDrag {
     let filteredRowAbove = this.rows.find((row) => row.rect.top < event.pageY && row.rect.top + (row.rect.height / 2) > event.pageY);
     let filteredRowBelow = this.rows.find((row) => row.rect.top + (row.rect.height / 2) < event.pageY && row.rect.top + row.rect.height > event.pageY);
 
+    let tableData = this.toData();
+    let cleanTableData = this.toData();
+
     if (filteredRowAbove && draggedRow !== filteredRowAbove) {
-      this.tbody.insertBefore(draggedRow.element, filteredRowAbove.element);
-      this.rows.forEach((row) => row.calculateRect());
+      let currentTableDataRow = tableData.find((row) => row.id === draggedRow.data.id);
+      currentTableDataRow.weight = filteredRowAbove.data.weight - 0.5;
+      this.prepareTableDataForValidation(tableData);
+
+      if (this.isValidTransition(cleanTableData, tableData)) {
+        this.tbody.insertBefore(draggedRow.element, filteredRowAbove.element);
+        this.rows.forEach((row) => row.calculateRect());
+      }
     }
 
     if (filteredRowBelow && draggedRow !== filteredRowBelow) {
-      this.tbody.insertBefore(draggedRow.element, filteredRowBelow.element.nextElementSibling);
-      this.rows.forEach((row) => row.calculateRect());
+      let currentTableDataRow = tableData.find((row) => row.id === draggedRow.data.id);
+      currentTableDataRow.weight = filteredRowBelow.data.weight + 0.5;
+      this.prepareTableDataForValidation(tableData);
+
+      if (this.isValidTransition(cleanTableData, tableData)) {
+        this.tbody.insertBefore(draggedRow.element, filteredRowBelow.element.nextElementSibling);
+        this.rows.forEach((row) => row.calculateRect());
+      }
     }
   }
 
+  prepareTableDataForValidation (tableData) {
+    tableData = tableData.sort((row) => row.weight);
+    tableData.forEach((row, delta) => {
+      row.weight = delta;
+    });
+
+    return tableData;
+  }
+
+  toData () {
+    return this.rows.map((row) => row.data);
+  }
+
+  isValidTransition (oldTableData, proposedTableData) {
+    let validateEvent = new CustomEvent('isValidTransition', { cancelable: true, detail: {
+        oldStructure: oldTableData,
+        newStructure: proposedTableData
+      }
+    });
+
+    this.table.dispatchEvent(validateEvent);
+    return !validateEvent.defaultPrevented;
+  }
 
   getRowById (id) {
     return this.rows.find((row) => row.id === parseInt(id));

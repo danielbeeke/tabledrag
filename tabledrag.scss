@@ -15,5 +15,23 @@
     &.is-dragged {
       background-color: red;
     }
+
+    /*
+    &[data-depth="0"] td:first-child {
+      padding-left: 30px;
+    }
+
+    &[data-depth="1"] td:first-child {
+      padding-left: 50px;
+    }
+
+    &[data-depth="2"] td:first-child {
+      padding-left: 70px;
+    }
+
+    &[data-depth="3"] td:first-child {
+      padding-left: 90px;
+    }
+    */
   }
 }

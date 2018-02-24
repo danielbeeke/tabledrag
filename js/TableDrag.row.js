@@ -15,10 +15,21 @@ export default class Row {
     this.element.addEventListener('drag', (event) => this.drag(event), false);
     this.element.addEventListener('dragend', (event) => this.dragEnd(event), false);
     this.element.addEventListener('drop', (event) => this.drop(event), false);
+
+    this.element.addEventListener('mousedown', (event) => this.mouseDown(event), false);
+    this.element.addEventListener('mouseup', (event) => this.mouseUp(event), false);
   }
 
   calculateRect () {
     this.rect = this.element.getBoundingClientRect();
+  }
+
+  mouseDown (event) {
+    this.element.classList.add('is-dragged');
+  }
+
+  mouseUp (event) {
+    this.element.classList.remove('is-dragged');
   }
 
   dragStart (event) {
@@ -32,8 +43,6 @@ export default class Row {
   }
 
   drag (event) {
-
-
 
   }
 
