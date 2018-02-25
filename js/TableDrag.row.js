@@ -7,7 +7,7 @@ export default class Row {
     this.element = rowElement;
     this.tableDrag = tableDrag;
     this.data = this.tableDrag.connector.parseRow(this.element);
-    this.id = parseInt(this.data.weight);
+    this.data.id = this.guid();
     this.element.draggable = true;
     this.calculateRect();
     this.dragCssClass = this.tableDrag.options.dragCssClass;
@@ -19,6 +19,16 @@ export default class Row {
     this.element.addEventListener('drop', (event) => this.drop(event), false);
     this.element.addEventListener('mousedown', (event) => this.mouseDown(event), false);
     this.element.addEventListener('mouseup', (event) => this.mouseUp(event), false);
+  }
+
+  postTransition () {
+    this.calculateRect();
+    this.writeOut();
+  }
+
+  guid () {
+    let s4 = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
   }
 
   writeOut () {
@@ -38,7 +48,7 @@ export default class Row {
   }
 
   dragStart (event) {
-    event.dataTransfer.setData('tableRow', this.id);
+    event.dataTransfer.setData('tableRow', this.data.id);
     this.element.classList.add(this.dragCssClass);
     event.dataTransfer.effectAllowed = 'none';
 
@@ -47,7 +57,7 @@ export default class Row {
     event.dataTransfer.setDragImage(dragIcon, 0, 0);
 
     this.startX = event.pageX;
-    this.startDepth = this.data.depth;
+    this.tableDrag.setStartDepths();
   }
 
   drag (event) {
@@ -57,7 +67,7 @@ export default class Row {
   dragEnd (event) {
     this.element.classList.remove(this.dragCssClass);
     this.startX = null;
-    this.startDepth = null;
+    this.tableDrag.unsetStartDepths();
   }
 
   drop (event) {

@@ -4,7 +4,7 @@ import Row from './TableDrag.row.js';
 let defaultOptions = {
   connector: AttributesConnector,
   dragCssClass: 'is-dragged',
-  nestingDragDistance: 100
+  nestingDragDistance: 60
 };
 
 export default class TableDrag {
@@ -29,6 +29,18 @@ export default class TableDrag {
     });
   }
 
+  setStartDepths () {
+    this.rows.forEach((row) => {
+      row.startDepth = row.data.depth;
+    });
+  }
+
+  unsetStartDepths () {
+    this.rows.forEach((row) => {
+      row.startDepth = null;
+    });
+  }
+
   /**
    * We check if the dragging must put the dragged row above or below the place it is currently being dragged over.
    *
@@ -39,6 +51,7 @@ export default class TableDrag {
 
     let tableData = this.toData();
     let cleanTableData = this.toData();
+    let operations = [];
 
     let tableRowId = event.dataTransfer.getData('tableRow');
     let draggedRow = this.getRowById(tableRowId);
@@ -51,9 +64,17 @@ export default class TableDrag {
     let times = Math.floor((event.pageX - draggedRow.startX) / this.options.nestingDragDistance);
 
     // Indenting
-    if (draggedRow.data.depth !== draggedRow.startDepth + times) {
-      draggedRow.data.depth = draggedRow.startDepth + times;
-      draggedRow.writeOut();
+    if (draggedRow.data.depth !== draggedRow.startDepth + times && draggedRow.startDepth + times >= 0) {
+      let children = this.getChildrenOfRow(draggedRow);
+      children.forEach((childRow) => {
+        operations.push(() => {
+          childRow.data.depth = childRow.startDepth + times;
+        });
+      });
+
+      operations.push(() => {
+        draggedRow.data.depth = draggedRow.startDepth + times;
+      });
     }
 
     /**
@@ -64,29 +85,59 @@ export default class TableDrag {
 
     if (filteredRowAbove && draggedRow !== filteredRowAbove) {
       currentTableDataRow.weight = filteredRowAbove.data.weight - 0.5;
-      this.prepareTableDataForValidation(tableData);
-
-      if (this.isValidTransition(cleanTableData, tableData)) {
+      operations.push(() => {
         this.tbody.insertBefore(draggedRow.element, filteredRowAbove.element);
-        this.rows.forEach((row) => row.calculateRect());
-      }
+      });
     }
 
     if (filteredRowBelow && draggedRow !== filteredRowBelow) {
       currentTableDataRow.weight = filteredRowBelow.data.weight + 0.5;
-      this.prepareTableDataForValidation(tableData);
-
-      if (this.isValidTransition(cleanTableData, tableData)) {
+      operations.push(() => {
         this.tbody.insertBefore(draggedRow.element, filteredRowBelow.element.nextElementSibling);
-        this.rows.forEach((row) => row.calculateRect());
-      }
+      });
+    }
+
+    if (operations.length) {
+      this.updateWeightsToIntegers(tableData);
+    }
+
+    if (this.isValidTransition(cleanTableData, tableData)) {
+      operations.push(() => {
+        this.rows.forEach((row) => row.postTransition());
+      });
+
+      operations.forEach((operation) => operation());
     }
   }
 
-  prepareTableDataForValidation (tableData) {
-    tableData = tableData.sort((row) => row.weight);
+  getChildrenOfRow (parentRow) {
+    let children = [];
+
+    let passedParentRow = false;
+    let passedAllChildren = false;
+
+    this.rows.forEach((row) => {
+      if (passedParentRow && row.data.depth <= parentRow.data.depth) {
+        passedAllChildren = true;
+      }
+
+      if (passedParentRow && !passedAllChildren) {
+        children.push(row);
+      }
+
+      if (row.data.id === parentRow.data.id) {
+        passedParentRow = true;
+      }
+    });
+
+    return children;
+  }
+
+  updateWeightsToIntegers (tableData) {
+    tableData = tableData.sort((row) => row.weight).reverse();
+
     tableData.forEach((row, delta) => {
-      row.weight = delta;
+      row.weight = (delta + 1);
     });
 
     return tableData;
@@ -108,7 +159,7 @@ export default class TableDrag {
   }
 
   getRowById (id) {
-    return this.rows.find((row) => row.id === parseInt(id));
+    return this.rows.find((row) => row.data.id === id);
   }
 
   getRowByElement (element) {
