@@ -1,14 +1,20 @@
-import AttributesConnector from './TableDrag.attributesConnector.js';
 import Row from './TableDrag.row.js';
 
+/**
+ * Defaults for the tableDrag.
+ */
 let defaultOptions = {
-  connector: AttributesConnector,
   dragCssClass: 'is-dragged',
   nestingDragDistance: 60
 };
 
 export default class TableDrag {
 
+  /**
+   *
+   * @param table, the HTML table element.
+   * @param options, overrides on the defaultOptions object.
+   */
   constructor (table, options = {}) {
     if (!table.tagName || table.tagName !== 'TABLE') {
       throw 'The first parameter must be the table HTML element.';
@@ -17,10 +23,7 @@ export default class TableDrag {
     this.table = table;
     this.tbody = this.table.querySelector('tbody');
     this.options = Object.assign(defaultOptions, options);
-
-    this.connector = new this.options.connector();
     this.table.classList.add('tabledrag-initiated');
-
     this.table.addEventListener('dragover', (event) => this.dragOver(event), false);
 
     this.rows = [];
@@ -29,12 +32,19 @@ export default class TableDrag {
     });
   }
 
+  /**
+   * When the user starts dragging we need to have a copy of the data
+   * so we can drag all the way to somewhere and than apply that movement.
+   */
   setStartDepths () {
     this.rows.forEach((row) => {
       row.startDepth = row.data.depth;
     });
   }
 
+  /**
+   * Cleaning up above explained data.
+   */
   unsetStartDepths () {
     this.rows.forEach((row) => {
       row.startDepth = null;
@@ -65,6 +75,7 @@ export default class TableDrag {
 
     // Indenting
     if (draggedRow.data.depth !== draggedRow.startDepth + times && draggedRow.startDepth + times >= 0) {
+      // TODO modify validation data.
       let children = this.getChildrenOfRow(draggedRow);
       children.forEach((childRow) => {
         operations.push(() => {
@@ -110,6 +121,11 @@ export default class TableDrag {
     }
   }
 
+  /**
+   * Returns all the children of a row.
+   * @param parentRow
+   * @returns {Array}
+   */
   getChildrenOfRow (parentRow) {
     let children = [];
 
@@ -133,6 +149,12 @@ export default class TableDrag {
     return children;
   }
 
+  /**
+   * Updates the table data so it only has integers for the weights.
+   * Used when changing the sorting.
+   * @param tableData
+   * @returns {Array}
+   */
   updateWeightsToIntegers (tableData) {
     tableData = tableData.sort((row) => row.weight).reverse();
 
@@ -143,10 +165,20 @@ export default class TableDrag {
     return tableData;
   }
 
+  /**
+   * Exports the table to tableData.
+   * @returns {Array}
+   */
   toData () {
     return this.rows.map((row) => row.data);
   }
 
+  /**
+   * Dispatches the isValidTransition event.
+   * @param oldTableData
+   * @param proposedTableData
+   * @returns {boolean}
+   */
   isValidTransition (oldTableData, proposedTableData) {
     let validateEvent = new CustomEvent('isValidTransition', { cancelable: true, detail: {
         oldStructure: oldTableData,
@@ -158,11 +190,12 @@ export default class TableDrag {
     return !validateEvent.defaultPrevented;
   }
 
+  /**
+   * Returns a row by ID.
+   * @param id
+   * @returns {*}
+   */
   getRowById (id) {
     return this.rows.find((row) => row.data.id === id);
-  }
-
-  getRowByElement (element) {
-    return this.rows.find((row) => row.element === element);
   }
 }
