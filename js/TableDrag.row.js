@@ -10,13 +10,10 @@ export default class Row {
 
     this.tableDrag = tableDrag;
     this.element = rowElement;
-    this.data = {};
-    this.parseData();
-    this.data.id = this.guid();
+    if (!this.element.dataset.id) this.element.dataset.id = this.guid();
     this.element.draggable = true;
     this.dragCssClass = this.tableDrag.options.dragCssClass;
     this.calculateRect();
-    this.startX = null;
 
     this.element.addEventListener('dragstart', (event) => this.dragStart(event), false);
     this.element.addEventListener('dragend', (event) => this.dragEnd(event), false);
@@ -26,30 +23,10 @@ export default class Row {
   }
 
   /**
-   * Parses the HTML data attributes to the instance.
-   */
-  parseData () {
-    this.data = Object.assign(this.data, {
-      title: this.element.innerText,
-      weight: parseInt(this.element.dataset.weight),
-      depth: parseInt(this.element.dataset.depth)
-    });
-  }
-
-  /**
-   * Writes the instance data to the HTML data attributes.
-   */
-  writeData () {
-    this.element.dataset.weight = this.data.weight;
-    this.element.dataset.depth = this.data.depth;
-  }
-
-  /**
    * After doing changes to the DOM we need to recalculate things for this row.
    */
   postTransition () {
     this.calculateRect();
-    this.writeData();
   }
 
   /**
@@ -88,16 +65,13 @@ export default class Row {
    * @param event
    */
   dragStart (event) {
-    event.dataTransfer.setData('tableRow', this.data.id);
+    event.dataTransfer.setData('tableRow', this.element.dataset.id);
     this.element.classList.add(this.dragCssClass);
     event.dataTransfer.effectAllowed = 'none';
 
     let dragIcon = document.createElement('img');
     dragIcon.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     event.dataTransfer.setDragImage(dragIcon, 0, 0);
-
-    this.startX = event.pageX;
-    this.tableDrag.setStartDepths();
   }
 
   /**
@@ -106,8 +80,6 @@ export default class Row {
    */
   dragEnd (event) {
     this.element.classList.remove(this.dragCssClass);
-    this.startX = null;
-    this.tableDrag.unsetStartDepths();
   }
 
   /**

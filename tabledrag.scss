@@ -16,10 +16,10 @@
       background-color: red;
     }
 
-    @for $i from 0 through 30 {
-      &[data-depth="#{$i}"] td:first-child {
-        padding-left: 30px + (30px * $i);
-      }
-    }
+    //@for $i from 0 through 30 {
+    //  &[data-depth="#{$i}"] td:first-child {
+    //    padding-left: 30px + (30px * $i);
+    //  }
+    //}
   }
 }

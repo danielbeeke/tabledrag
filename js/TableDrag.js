@@ -28,153 +28,65 @@ export default class TableDrag {
     this.rows = Array.from(this.tbody.children).map(row => new Row(row, this));
   }
 
-  /**
-   * When the user starts dragging we need to have a copy of the data
-   * so we can drag all the way to somewhere and than apply that movement.
-   */
-  setStartDepths () {
-    this.rows.forEach(row => row.startDepth = row.data.depth);
+  getElementInTbodyById (tbody, id) {
+    return Array.from(tbody.children).find(row => row.dataset.id === id);
   }
 
   /**
-   * Cleaning up above explained data.
-   */
-  unsetStartDepths () {
-    this.rows.forEach(row => row.startDepth = null);
-  }
-
-  /**
-   * We check if the dragging must put the dragged row above or below the place it is currently being dragged over.
+   * When dragging the reactions are saved in functions as an operation.
+   * This operation is simulated on a copy of the table.
+   * That table is converted to an array that will be validated and if
+   * valid the operations are run again but this time on the real table.
    *
    * @param event Drag event.
    */
   dragOver (event) {
     event.preventDefault();
 
-    let tableData = this.toData();
-    let cleanTableData = this.toData();
     let operations = [];
+    let draggedRow = this.getRowById(event.dataTransfer.getData('tableRow'));
+    let clonedTbody = this.tbody.cloneNode(true);
 
-    let tableRowId = event.dataTransfer.getData('tableRow');
-    let draggedRow = this.getRowById(tableRowId);
-    let currentTableDataRow = tableData.find((row) => row.id === draggedRow.data.id);
+    let touchingRowAbove = this.rows.find((row) => row.rect.top < event.pageY && row.rect.top + (row.rect.height / 2) > event.pageY);
+    let touchingRowBelow = this.rows.find((row) => row.rect.top + (row.rect.height / 2) < event.pageY && row.rect.top + row.rect.height > event.pageY);
 
-    /**
-     * Horizontal movement.
-     */
-
-    let times = Math.floor((event.pageX - draggedRow.startX) / this.options.nestingDragDistance);
-
-    // Indenting
-    if (draggedRow.data.depth !== draggedRow.startDepth + times && draggedRow.startDepth + times >= 0) {
-      // TODO modify validation data.
-      let children = this.getChildrenOfRow(draggedRow);
-      children.forEach((childRow) => {
-        operations.push(() => {
-          childRow.data.depth = childRow.startDepth + times;
-        });
-      });
-
-      operations.push(() => {
-        draggedRow.data.depth = draggedRow.startDepth + times;
+    if (touchingRowAbove && draggedRow !== touchingRowAbove) {
+      operations.push((tbody) => {
+        let draggedRowElement = this.getElementInTbodyById(tbody, draggedRow.element.dataset.id);
+        let touchingRowAboveElement = this.getElementInTbodyById(tbody, touchingRowAbove.element.dataset.id);
+        tbody.insertBefore(draggedRowElement, touchingRowAboveElement);
       });
     }
 
-    /**
-     * vertical movement.
-     */
-    let filteredRowAbove = this.rows.find((row) => row.rect.top < event.pageY && row.rect.top + (row.rect.height / 2) > event.pageY);
-    let filteredRowBelow = this.rows.find((row) => row.rect.top + (row.rect.height / 2) < event.pageY && row.rect.top + row.rect.height > event.pageY);
-
-    if (filteredRowAbove && draggedRow !== filteredRowAbove) {
-      currentTableDataRow.weight = filteredRowAbove.data.weight - 0.5;
-      operations.push(() => {
-        this.tbody.insertBefore(draggedRow.element, filteredRowAbove.element);
+    if (touchingRowBelow && draggedRow !== touchingRowBelow) {
+      operations.push((tbody) => {
+        let draggedRowElement = this.getElementInTbodyById(tbody, draggedRow.element.dataset.id);
+        let touchingRowBelowElement = this.getElementInTbodyById(tbody, touchingRowBelow.element.dataset.id);
+        tbody.insertBefore(draggedRowElement, touchingRowBelowElement.nextElementSibling);
       });
     }
 
-    if (filteredRowBelow && draggedRow !== filteredRowBelow) {
-      currentTableDataRow.weight = filteredRowBelow.data.weight + 0.5;
-      operations.push(() => {
-        this.tbody.insertBefore(draggedRow.element, filteredRowBelow.element.nextElementSibling);
-      });
-    }
-
-    if (operations.length) {
-      this.updateWeightsToIntegers(tableData);
-    }
-
-    if (this.isValidTransition(cleanTableData, tableData)) {
-      operations.push(() => {
-        this.rows.forEach((row) => row.postTransition());
-      });
-
-      operations.forEach((operation) => operation());
-    }
-  }
-
-  /**
-   * Returns all the children of a row.
-   * @param parentRow
-   * @returns {Array}
-   */
-  getChildrenOfRow (parentRow) {
-    let children = [];
-
-    let passedParentRow = false;
-    let passedAllChildren = false;
-
-    this.rows.forEach((row) => {
-      if (passedParentRow && row.data.depth <= parentRow.data.depth) {
-        passedAllChildren = true;
-      }
-
-      if (passedParentRow && !passedAllChildren) {
-        children.push(row);
-      }
-
-      if (row.data.id === parentRow.data.id) {
-        passedParentRow = true;
-      }
+    operations.push(() => {
+      this.rows.forEach((row) => row.postTransition());
     });
 
-    return children;
-  }
+    operations.forEach((operation) => operation(clonedTbody));
 
-  /**
-   * Updates the table data so it only has integers for the weights.
-   * Used when changing the sorting.
-   * @param tableData
-   * @returns {Array}
-   */
-  updateWeightsToIntegers (tableData) {
-    tableData = tableData.sort((row) => row.weight).reverse();
-
-    tableData.forEach((row, delta) => {
-      row.weight = (delta + 1);
-    });
-
-    return tableData;
-  }
-
-  /**
-   * Exports the table to tableData.
-   * @returns {Array}
-   */
-  toData () {
-    return this.rows.map((row) => row.data);
+    if (this.isValidTransition(clonedTbody)) {
+      operations.forEach((operation) => operation(this.tbody));
+    }
   }
 
   /**
    * Dispatches the isValidTransition event.
-   * @param oldTableData
-   * @param proposedTableData
+   * @param simulatedTbody
    * @returns {boolean}
    */
-  isValidTransition (oldTableData, proposedTableData) {
-    let validateEvent = new CustomEvent('isValidTransition', { cancelable: true, detail: {
-        oldStructure: oldTableData,
-        newStructure: proposedTableData
+  isValidTransition (simulatedTbody) {
+    let validateEvent = new CustomEvent('isValidTransition', {
+      cancelable: true,
+      detail: {
+        rows: Array.from(simulatedTbody.children).map(row => Object.assign({}, row.dataset)),
       }
     });
 
@@ -188,6 +100,6 @@ export default class TableDrag {
    * @returns {*}
    */
   getRowById (id) {
-    return this.rows.find((row) => row.data.id === id);
+    return this.rows.find((row) => row.element.dataset.id === id);
   }
 }
