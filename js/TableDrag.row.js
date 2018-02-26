@@ -8,14 +8,14 @@ export default class Row {
   constructor (rowElement, tableDrag) {
     if (!rowElement.tagName || rowElement.tagName !== 'TR') throw 'The first parameter must be the tr HTML element.';
 
-    this.element = rowElement;
     this.tableDrag = tableDrag;
+    this.element = rowElement;
     this.data = {};
-    this.parseRow();
+    this.parseData();
     this.data.id = this.guid();
     this.element.draggable = true;
-    this.calculateRect();
     this.dragCssClass = this.tableDrag.options.dragCssClass;
+    this.calculateRect();
     this.startX = null;
 
     this.element.addEventListener('dragstart', (event) => this.dragStart(event), false);
@@ -28,7 +28,7 @@ export default class Row {
   /**
    * Parses the HTML data attributes to the instance.
    */
-  parseRow () {
+  parseData () {
     this.data = Object.assign(this.data, {
       title: this.element.innerText,
       weight: parseInt(this.element.dataset.weight),
@@ -39,7 +39,7 @@ export default class Row {
   /**
    * Writes the instance data to the HTML data attributes.
    */
-  writeOut () {
+  writeData () {
     this.element.dataset.weight = this.data.weight;
     this.element.dataset.depth = this.data.depth;
   }
@@ -49,7 +49,7 @@ export default class Row {
    */
   postTransition () {
     this.calculateRect();
-    this.writeOut();
+    this.writeData();
   }
 
   /**

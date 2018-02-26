@@ -21,15 +21,11 @@ export default class TableDrag {
     }
 
     this.table = table;
-    this.tbody = this.table.querySelector('tbody');
     this.options = Object.assign(defaultOptions, options);
+    this.tbody = this.table.querySelector('tbody');
     this.table.classList.add('tabledrag-initiated');
     this.table.addEventListener('dragover', (event) => this.dragOver(event), false);
-
-    this.rows = [];
-    Array.from(this.tbody.children).forEach((row) => {
-      this.rows.push(new Row(row, this));
-    });
+    this.rows = Array.from(this.tbody.children).map(row => new Row(row, this));
   }
 
   /**
@@ -37,18 +33,14 @@ export default class TableDrag {
    * so we can drag all the way to somewhere and than apply that movement.
    */
   setStartDepths () {
-    this.rows.forEach((row) => {
-      row.startDepth = row.data.depth;
-    });
+    this.rows.forEach(row => row.startDepth = row.data.depth);
   }
 
   /**
    * Cleaning up above explained data.
    */
   unsetStartDepths () {
-    this.rows.forEach((row) => {
-      row.startDepth = null;
-    });
+    this.rows.forEach(row => row.startDepth = null);
   }
 
   /**
