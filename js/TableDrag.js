@@ -48,6 +48,15 @@ export default class TableDrag {
     let clonedTbody = this.tbody.cloneNode(true);
     let startX = parseInt(event.dataTransfer.getData('tableRowStartX'));
     let startDepth = parseInt(event.dataTransfer.getData('tableRowStartDepth'));
+    let children = JSON.parse(event.dataTransfer.getData('tableRowChildren'));
+
+    let moveChildrenAlong = (tbody, lastUsedRow) => {
+      children.forEach((childData) => {
+        let childElement = this.getElementInTbodyById(tbody, childData.id);
+        tbody.insertBefore(childElement, lastUsedRow.nextElementSibling);
+        lastUsedRow = childElement;
+      });
+    };
 
     let touchingRowAbove = this.rows.find((row) => row.rect.top < event.pageY &&
       row.rect.top + (row.rect.height / 2) > event.pageY);
@@ -57,6 +66,7 @@ export default class TableDrag {
         let draggedRowElement = this.getElementInTbodyById(tbody, draggedRowId);
         let touchingRowAboveElement = this.getElementInTbodyById(tbody, touchingRowAbove.element.dataset.id);
         tbody.insertBefore(draggedRowElement, touchingRowAboveElement);
+        moveChildrenAlong(tbody, draggedRowElement);
       });
     }
 
@@ -68,6 +78,7 @@ export default class TableDrag {
         let draggedRowElement = this.getElementInTbodyById(tbody, draggedRowId);
         let touchingRowBelowElement = this.getElementInTbodyById(tbody, touchingRowBelow.element.dataset.id);
         tbody.insertBefore(draggedRowElement, touchingRowBelowElement.nextElementSibling);
+        moveChildrenAlong(tbody, draggedRowElement);
       });
     }
 
@@ -76,8 +87,11 @@ export default class TableDrag {
     if (startDepth + times >= 0) {
       operations.push((tbody) => {
         let draggedRowElement = this.getElementInTbodyById(tbody, draggedRowId);
-        console.log(startDepth, times)
         draggedRowElement.dataset.depth = startDepth + times;
+        children.forEach((childData) => {
+          let childElement = this.getElementInTbodyById(tbody, childData.id);
+          childElement.dataset.depth = parseInt(childData.depth) + times;
+        });
       });
     }
 

@@ -16,6 +16,10 @@
       background-color: red;
     }
 
+    &.is-child {
+      background-color: blue;
+    }
+
     @for $i from 0 through 30 {
       &[data-depth="#{$i}"] td:first-child {
         padding-left: 30px + (30px * $i);

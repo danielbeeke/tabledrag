@@ -64,7 +64,39 @@ export default class Row {
     event.dataTransfer.setData('tableRowId', this.element.dataset.id);
     event.dataTransfer.setData('tableRowStartX', event.pageX);
     event.dataTransfer.setData('tableRowStartDepth', this.element.dataset.depth);
+    let children = this.getChildren().map(child => Object.assign({}, child.dataset));
+    event.dataTransfer.setData('tableRowChildren', JSON.stringify(children));
+
     this.element.classList.add(this.dragCssClass);
+  }
+
+  /**
+   * Get all children from a row.
+   * @returns {Array}
+   */
+  getChildren () {
+    let parentRow = this.element;
+
+    let children = [];
+
+    let passedParentRow = false;
+    let passedAllChildren = false;
+
+    Array.from(this.tableDrag.tbody.children).forEach((row) => {
+      if (passedParentRow && row.dataset.depth <= parentRow.dataset.depth) {
+        passedAllChildren = true;
+      }
+
+      if (passedParentRow && !passedAllChildren) {
+        children.push(row);
+      }
+
+      if (row.dataset.id === parentRow.dataset.id) {
+        passedParentRow = true;
+      }
+    });
+
+    return children;
   }
 
   /**

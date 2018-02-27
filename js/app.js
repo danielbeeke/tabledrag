@@ -6,6 +6,10 @@ Array.from(tables).forEach((table) => {
   new TableDrag(table);
 
   table.addEventListener('isValidTransition', function (event) {
-    // event.preventDefault();
+    event.detail.rows.forEach((row) => {
+      if (parseInt(row.depth) > 4) {
+        event.preventDefault();
+      }
+    })
   })
 });
