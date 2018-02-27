@@ -16,9 +16,8 @@ export default class TableDrag {
    * @param options, overrides on the defaultOptions object.
    */
   constructor (table, options = {}) {
-    if (!table.tagName || table.tagName !== 'TABLE') {
-      throw 'The first parameter must be the table HTML element.';
-    }
+    if (!table.tagName || table.tagName !== 'TABLE') throw 'The first parameter must be the table HTML element.';
+    if (typeof options !== 'object') throw 'The second parameter must be an object.';
 
     this.table = table;
     this.options = Object.assign(defaultOptions, options);
@@ -33,10 +32,10 @@ export default class TableDrag {
   }
 
   /**
-   * When dragging the reactions are saved in functions as an operation.
+   * When dragging, the reactions are saved in functions as an operation.
    * This operation is simulated on a copy of the table.
-   * That table is converted to an array that will be validated and if
-   * valid the operations are run again but this time on the real table.
+   * That table is converted to an array that will be validated and
+   * if validated by the implementation of the plugin the operations are run again but this time on the real table.
    *
    * @param event Drag event.
    */
@@ -47,8 +46,8 @@ export default class TableDrag {
     let draggedRow = this.getRowById(event.dataTransfer.getData('tableRow'));
     let clonedTbody = this.tbody.cloneNode(true);
 
-    let touchingRowAbove = this.rows.find((row) => row.rect.top < event.pageY && row.rect.top + (row.rect.height / 2) > event.pageY);
-    let touchingRowBelow = this.rows.find((row) => row.rect.top + (row.rect.height / 2) < event.pageY && row.rect.top + row.rect.height > event.pageY);
+    let touchingRowAbove = this.rows.find((row) => row.rect.top < event.pageY &&
+      row.rect.top + (row.rect.height / 2) > event.pageY);
 
     if (touchingRowAbove && draggedRow !== touchingRowAbove) {
       operations.push((tbody) => {
@@ -58,6 +57,9 @@ export default class TableDrag {
       });
     }
 
+    let touchingRowBelow = this.rows.find((row) => row.rect.top + (row.rect.height / 2) < event.pageY &&
+      row.rect.top + row.rect.height > event.pageY);
+
     if (touchingRowBelow && draggedRow !== touchingRowBelow) {
       operations.push((tbody) => {
         let draggedRowElement = this.getElementInTbodyById(tbody, draggedRow.element.dataset.id);
@@ -66,8 +68,9 @@ export default class TableDrag {
       });
     }
 
-    operations.push(() => {
+    operations.push((tbody) => {
       this.rows.forEach((row) => row.postTransition());
+      Array.from(tbody.children).forEach((row, delta) => row.dataset.weight = delta + 1);
     });
 
     operations.forEach((operation) => operation(clonedTbody));

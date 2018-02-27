@@ -25,16 +25,8 @@ export default class Row {
   /**
    * After doing changes to the DOM we need to recalculate things for this row.
    */
-  postTransition () {
+  postTransition (delta) {
     this.calculateRect();
-  }
-
-  /**
-   * Returns a unique ID.
-   */
-  guid () {
-    let s4 = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-    return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
   }
 
   /**
@@ -65,13 +57,12 @@ export default class Row {
    * @param event
    */
   dragStart (event) {
-    event.dataTransfer.setData('tableRow', this.element.dataset.id);
-    this.element.classList.add(this.dragCssClass);
     event.dataTransfer.effectAllowed = 'none';
-
     let dragIcon = document.createElement('img');
     dragIcon.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     event.dataTransfer.setDragImage(dragIcon, 0, 0);
+    event.dataTransfer.setData('tableRow', this.element.dataset.id);
+    this.element.classList.add(this.dragCssClass);
   }
 
   /**
@@ -88,5 +79,13 @@ export default class Row {
    */
   drop (event) {
     event.preventDefault();
+  }
+
+  /**
+   * Returns a unique ID.
+   */
+  guid () {
+    let s4 = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
   }
 }
