@@ -61,7 +61,9 @@ export default class Row {
     let dragIcon = document.createElement('img');
     dragIcon.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     event.dataTransfer.setDragImage(dragIcon, 0, 0);
-    event.dataTransfer.setData('tableRow', this.element.dataset.id);
+    event.dataTransfer.setData('tableRowId', this.element.dataset.id);
+    event.dataTransfer.setData('tableRowStartX', event.pageX);
+    event.dataTransfer.setData('tableRowStartDepth', this.element.dataset.depth);
     this.element.classList.add(this.dragCssClass);
   }
 

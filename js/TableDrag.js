@@ -43,15 +43,18 @@ export default class TableDrag {
     event.preventDefault();
 
     let operations = [];
-    let draggedRow = this.getRowById(event.dataTransfer.getData('tableRow'));
+    let draggedRowId = event.dataTransfer.getData('tableRowId');
+    let draggedRow = this.getRowById(draggedRowId);
     let clonedTbody = this.tbody.cloneNode(true);
+    let startX = parseInt(event.dataTransfer.getData('tableRowStartX'));
+    let startDepth = parseInt(event.dataTransfer.getData('tableRowStartDepth'));
 
     let touchingRowAbove = this.rows.find((row) => row.rect.top < event.pageY &&
       row.rect.top + (row.rect.height / 2) > event.pageY);
 
     if (touchingRowAbove && draggedRow !== touchingRowAbove) {
       operations.push((tbody) => {
-        let draggedRowElement = this.getElementInTbodyById(tbody, draggedRow.element.dataset.id);
+        let draggedRowElement = this.getElementInTbodyById(tbody, draggedRowId);
         let touchingRowAboveElement = this.getElementInTbodyById(tbody, touchingRowAbove.element.dataset.id);
         tbody.insertBefore(draggedRowElement, touchingRowAboveElement);
       });
@@ -62,9 +65,19 @@ export default class TableDrag {
 
     if (touchingRowBelow && draggedRow !== touchingRowBelow) {
       operations.push((tbody) => {
-        let draggedRowElement = this.getElementInTbodyById(tbody, draggedRow.element.dataset.id);
+        let draggedRowElement = this.getElementInTbodyById(tbody, draggedRowId);
         let touchingRowBelowElement = this.getElementInTbodyById(tbody, touchingRowBelow.element.dataset.id);
         tbody.insertBefore(draggedRowElement, touchingRowBelowElement.nextElementSibling);
+      });
+    }
+
+    let times = Math.floor((event.pageX - startX) / this.options.nestingDragDistance);
+
+    if (startDepth + times >= 0) {
+      operations.push((tbody) => {
+        let draggedRowElement = this.getElementInTbodyById(tbody, draggedRowId);
+        console.log(startDepth, times)
+        draggedRowElement.dataset.depth = startDepth + times;
       });
     }
 
