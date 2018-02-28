@@ -47,3 +47,7 @@ harp server;
 
 You need a modern browser. Firefox or Chrome.
 If using Firefox you should enable dom.moduleScripts.enabled in about:config.
+
+## Video with some explanation
+
+[![Video](https://img.youtube.com/vi/jCYV17J8ZoQ/0.jpg)](https://www.youtube.com/watch?v=jCYV17J8ZoQ) 
