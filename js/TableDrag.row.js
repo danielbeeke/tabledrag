@@ -13,6 +13,7 @@ export default class Row {
     if (!this.element.dataset.id) this.element.dataset.id = this.guid();
     this.element.draggable = true;
     this.dragCssClass = this.tableDrag.options.dragCssClass;
+    this.dragCssChildClass = this.tableDrag.options.dragCssChildClass;
     this.calculateRect();
 
     this.element.addEventListener('dragstart', (event) => this.dragStart(event), false);
@@ -42,6 +43,7 @@ export default class Row {
    */
   mouseDown (event) {
     this.element.classList.add(this.dragCssClass);
+    this.getChildren().forEach((child) => child.classList.add(this.dragCssChildClass));
   }
 
   /**
@@ -50,6 +52,7 @@ export default class Row {
    */
   mouseUp (event) {
     this.element.classList.remove(this.dragCssClass);
+    this.getChildren().forEach((child) => child.classList.remove(this.dragCssChildClass));
   }
 
   /**
@@ -57,6 +60,7 @@ export default class Row {
    * @param event
    */
   dragStart (event) {
+    this.tableDrag.updateTableDataStart();
     event.dataTransfer.effectAllowed = 'none';
     let dragIcon = document.createElement('img');
     dragIcon.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
@@ -64,10 +68,16 @@ export default class Row {
     event.dataTransfer.setData('tableRowId', this.element.dataset.id);
     event.dataTransfer.setData('tableRowStartX', event.pageX);
     event.dataTransfer.setData('tableRowStartDepth', this.element.dataset.depth);
-    let children = this.getChildren().map(child => Object.assign({}, child.dataset));
+    let children = this.getChildren().map(child => {
+      let data = Object.assign({}, child.dataset);
+      data.depth = parseInt(data.depth);
+      data.weight = parseInt(data.weight);
+      return data;
+    });
     event.dataTransfer.setData('tableRowChildren', JSON.stringify(children));
 
     this.element.classList.add(this.dragCssClass);
+    this.getChildren().forEach((child) => child.classList.add(this.dragCssChildClass));
   }
 
   /**
@@ -105,6 +115,7 @@ export default class Row {
    */
   dragEnd (event) {
     this.element.classList.remove(this.dragCssClass);
+    this.getChildren().forEach((child) => child.classList.remove(this.dragCssChildClass));
   }
 
   /**

@@ -1,11 +1,18 @@
 import Row from './TableDrag.row.js';
 
+// Included validators.
+import Tree from './TableDrag.validator.tree.js';
+import MaxDepth from './TableDrag.validator.maxDepth.js';
+
+
 /**
  * Defaults for the tableDrag.
  */
 let defaultOptions = {
   dragCssClass: 'is-dragged',
-  nestingDragDistance: 60
+  dragCssChildClass: 'parent-is-dragged',
+  nestingDragDistance: 30,
+  validators: [Tree]
 };
 
 export default class TableDrag {
@@ -25,6 +32,15 @@ export default class TableDrag {
     this.table.classList.add('tabledrag-initiated');
     this.table.addEventListener('dragover', (event) => this.dragOver(event), false);
     this.rows = Array.from(this.tbody.children).map(row => new Row(row, this));
+
+    this.options.validators.forEach((validatorItem) => {
+      if (typeof validatorItem === 'object') {
+        new validatorItem[0](this, validatorItem[1]);
+      }
+      else if (typeof validatorItem === 'function') {
+        new validatorItem(this);
+      }
+    })
   }
 
   getElementInTbodyById (tbody, id) {
@@ -90,7 +106,7 @@ export default class TableDrag {
         draggedRowElement.dataset.depth = startDepth + times;
         children.forEach((childData) => {
           let childElement = this.getElementInTbodyById(tbody, childData.id);
-          childElement.dataset.depth = parseInt(childData.depth) + times;
+          childElement.dataset.depth = childData.depth + times;
         });
       });
     }
@@ -108,6 +124,18 @@ export default class TableDrag {
   }
 
   /**
+   * To be able to provide a state that contains the table when dragging started we create a dump of the table.
+   */
+  updateTableDataStart () {
+    this.tableDataStarted = Array.from(this.tbody.children).map(row => {
+      let data = Object.assign({}, row.dataset);
+      data.depth = parseInt(data.depth);
+      data.weight = parseInt(data.weight);
+      return data;
+    });
+  }
+
+  /**
    * Dispatches the isValidTransition event.
    * @param simulatedTbody
    * @returns {boolean}
@@ -116,7 +144,13 @@ export default class TableDrag {
     let validateEvent = new CustomEvent('isValidTransition', {
       cancelable: true,
       detail: {
-        rows: Array.from(simulatedTbody.children).map(row => Object.assign({}, row.dataset)),
+        initialRows: this.tableDataStarted,
+        rows: Array.from(simulatedTbody.children).map(row => {
+          let data = Object.assign({}, row.dataset);
+          data.depth = parseInt(data.depth);
+          data.weight = parseInt(data.weight);
+          return data;
+        }),
       }
     });
 
@@ -133,3 +167,8 @@ export default class TableDrag {
     return this.rows.find((row) => row.element.dataset.id === id);
   }
 }
+
+TableDrag.validators = {
+  tree: Tree,
+  maxDepth: MaxDepth
+};

@@ -1,15 +1,23 @@
 import TableDrag from './TableDrag.js';
 
-let tables = document.querySelectorAll('.es6-table-drag');
+let table = document.querySelector('.es6-table-drag');
 
-Array.from(tables).forEach((table) => {
-  new TableDrag(table);
+new TableDrag(table, {
+  validators: [
+    // Shortest but not settings injected into the validator
+    [TableDrag.validators.maxDepth, {
+      max: 5
+    }],
 
-  table.addEventListener('isValidTransition', function (event) {
-    event.detail.rows.forEach((row) => {
-      if (parseInt(row.depth) > 4) {
-        event.preventDefault();
-      }
-    })
-  })
+    // With settings injected into the validator
+    [TableDrag.validators.tree, {
+      myOption: true
+    }]
+  ]
+});
+
+// Event listener for validation, the validators use the same event. The validator structure is only for reuse.
+table.addEventListener('isValidTransition', function (event) {
+  // The structure to validate is: event.detail.rows
+  // When the structure is invalid call: event.preventDefault();
 });
