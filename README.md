@@ -6,7 +6,7 @@ It is build because the Drupal tabledrag.js was to messy and complex to add vali
 
 ## The validation trick
 
-When dragging, all the users actions are first applied to a copy of the table.
+When dragging, all the user actions are first applied to a copy of the table.
 That copy is converted to an array of data so the validation plugins/events can do their validations.
 
 ## How to use
