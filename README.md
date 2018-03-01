@@ -6,8 +6,10 @@ It is build because the Drupal tabledrag.js was to messy and complex to add vali
 
 ## The validation trick
 
-When dragging, all the user actions are first applied to a copy of the table.
-That copy is converted to an array of data so the validation plugins/events can do their validations.
+When dragging, the reactions are saved in functions as an operation.
+This operation is simulated on a copy of the table.
+That table is passed on to the event listeners.
+if validated by the implementation of the plugin the operations are run again but this time on the real table.
 
 ## How to use
 
@@ -22,7 +24,6 @@ new TableDrag(table);
 table.addEventListener('isValidTransition', function (event) {
   
   // The structure to validate is: event.detail.rows
-  // The old structure is available via event.detail.initialRows
   
   // When the structure is invalid call: event.preventDefault();
 

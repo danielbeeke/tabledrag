@@ -17,9 +17,7 @@ export default class MaxDepth {
       let rows = event.detail.rows;
 
       rows.forEach((row) => {
-        if (parseInt(row.dataset.depth) > this.options.max) {
-          event.preventDefault();
-        }
+        if (parseInt(row.dataset.depth) > this.options.max) event.preventDefault();
       });
     });
   }

@@ -4,7 +4,6 @@ import Row from './TableDrag.row.js';
 import Tree from './TableDrag.validator.tree.js';
 import MaxDepth from './TableDrag.validator.maxDepth.js';
 
-
 /**
  * Defaults for the tableDrag.
  */
@@ -33,10 +32,13 @@ export default class TableDrag {
     this.table.addEventListener('dragover', (event) => this.dragOver(event), false);
     this.rows = Array.from(this.tbody.children).map(row => new Row(row, this));
 
+    // Start all the validator plugins.
     this.options.validators.forEach((validatorItem) => {
+      // Complex notation.
       if (typeof validatorItem === 'object') {
         new validatorItem[0](this, validatorItem[1]);
       }
+      // Short notation.
       else if (typeof validatorItem === 'function') {
         new validatorItem(this);
       }
@@ -46,7 +48,7 @@ export default class TableDrag {
   /**
    * When dragging, the reactions are saved in functions as an operation.
    * This operation is simulated on a copy of the table.
-   * That table is converted to an array that will be validated and
+   * That table is passed on to the event listeners.
    * if validated by the implementation of the plugin the operations are run again but this time on the real table.
    *
    * @param event Drag event.
@@ -62,7 +64,9 @@ export default class TableDrag {
     let startDepth = parseInt(event.dataTransfer.getData('tableRowStartDepth'));
     let children = JSON.parse(event.dataTransfer.getData('tableRowStartChildren'));
 
-    // Vertical movement.
+    /**
+     * START Vertical movement.
+     */
     let moveChildrenAlong = (tbody, lastUsedRow) => {
       children.forEach((childData) => {
         let childElement = this.getElementInTbodyById(tbody, childData.id);
@@ -94,8 +98,13 @@ export default class TableDrag {
         moveChildrenAlong(tbody, draggedRowElement);
       });
     }
+    /**
+     * END Vertical movement.
+     */
 
-    // Horizontal movement.
+    /**
+     * START Horizontal movement.
+     */
     let times = Math.floor((event.pageX - startX) / this.options.nestingDragDistance);
 
     if (startDepth + times >= 0) {
@@ -113,9 +122,14 @@ export default class TableDrag {
       this.rows.forEach((row) => row.postTransition());
       Array.from(tbody.children).forEach((row, delta) => row.dataset.weight = delta + 1);
     });
+    /**
+     * END Horizontal movement.
+     */
 
+    // Execute the operations on the cloned table.
     operations.forEach((operation) => operation(clonedTbody));
 
+    // If validated execute the operations on the real table.
     if (this.isValidTransition(clonedTbody, draggedRow)) {
       operations.forEach((operation) => operation(this.tbody));
     }
@@ -191,6 +205,7 @@ export default class TableDrag {
     let passedSelf = false;
     let childElement = this.getElementInTbodyById(tbody, id);
     let previousDepth = parseInt(childElement.dataset.depth);
+
     Array.from(tbody.children).reverse().forEach((row) => {
       if (row === childElement) passedSelf = true;
       if (passedSelf && parseInt(row.dataset.depth) === previousDepth - 1) {
