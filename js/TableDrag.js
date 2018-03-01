@@ -43,10 +43,6 @@ export default class TableDrag {
     })
   }
 
-  getElementInTbodyById (tbody, id) {
-    return Array.from(tbody.children).find(row => row.dataset.id === id);
-  }
-
   /**
    * When dragging, the reactions are saved in functions as an operation.
    * This operation is simulated on a copy of the table.
@@ -64,8 +60,9 @@ export default class TableDrag {
     let clonedTbody = this.tbody.cloneNode(true);
     let startX = parseInt(event.dataTransfer.getData('tableRowStartX'));
     let startDepth = parseInt(event.dataTransfer.getData('tableRowStartDepth'));
-    let children = JSON.parse(event.dataTransfer.getData('tableRowChildren'));
+    let children = JSON.parse(event.dataTransfer.getData('tableRowStartChildren'));
 
+    // Vertical movement.
     let moveChildrenAlong = (tbody, lastUsedRow) => {
       children.forEach((childData) => {
         let childElement = this.getElementInTbodyById(tbody, childData.id);
@@ -98,6 +95,7 @@ export default class TableDrag {
       });
     }
 
+    // Horizontal movement.
     let times = Math.floor((event.pageX - startX) / this.options.nestingDragDistance);
 
     if (startDepth + times >= 0) {
@@ -118,39 +116,23 @@ export default class TableDrag {
 
     operations.forEach((operation) => operation(clonedTbody));
 
-    if (this.isValidTransition(clonedTbody)) {
+    if (this.isValidTransition(clonedTbody, draggedRow)) {
       operations.forEach((operation) => operation(this.tbody));
     }
   }
 
   /**
-   * To be able to provide a state that contains the table when dragging started we create a dump of the table.
-   */
-  updateTableDataStart () {
-    this.tableDataStarted = Array.from(this.tbody.children).map(row => {
-      let data = Object.assign({}, row.dataset);
-      data.depth = parseInt(data.depth);
-      data.weight = parseInt(data.weight);
-      return data;
-    });
-  }
-
-  /**
    * Dispatches the isValidTransition event.
    * @param simulatedTbody
+   * @param draggedRow
    * @returns {boolean}
    */
-  isValidTransition (simulatedTbody) {
+  isValidTransition (simulatedTbody, draggedRow) {
     let validateEvent = new CustomEvent('isValidTransition', {
       cancelable: true,
       detail: {
-        initialRows: this.tableDataStarted,
-        rows: Array.from(simulatedTbody.children).map(row => {
-          let data = Object.assign({}, row.dataset);
-          data.depth = parseInt(data.depth);
-          data.weight = parseInt(data.weight);
-          return data;
-        }),
+        rows: Array.from(simulatedTbody.children),
+        draggedRow: draggedRow
       }
     });
 
@@ -166,8 +148,75 @@ export default class TableDrag {
   getRowById (id) {
     return this.rows.find((row) => row.element.dataset.id === id);
   }
+
+  /**
+   * Get all children from a row.
+   * @param tbody
+   * @param id
+   * @returns {Array}
+   */
+  getChildren (tbody, id) {
+    let parentRow = this.getElementInTbodyById(tbody, id);
+
+    let children = [];
+
+    let passedParentRow = false;
+    let passedAllChildren = false;
+
+    Array.from(tbody.children).forEach((row) => {
+      if (passedParentRow && parseInt(row.dataset.depth) <= parseInt(parentRow.dataset.depth)) {
+        passedAllChildren = true;
+      }
+
+      if (passedParentRow && !passedAllChildren) {
+        children.push(row);
+      }
+
+      if (row.dataset.id === parentRow.dataset.id) {
+        passedParentRow = true;
+      }
+    });
+
+    return children;
+  }
+
+  /**
+   * Get all parents from a row.
+   * @param tbody
+   * @param id
+   * @returns {Array}
+   */
+  getParents (tbody, id) {
+    let parents = [];
+    let passedSelf = false;
+    let childElement = this.getElementInTbodyById(tbody, id);
+    let previousDepth = parseInt(childElement.dataset.depth);
+    Array.from(tbody.children).reverse().forEach((row) => {
+      if (row === childElement) passedSelf = true;
+      if (passedSelf && parseInt(row.dataset.depth) === previousDepth - 1) {
+        parents.push(row);
+        previousDepth = parseInt(row.dataset.depth);
+      }
+    });
+
+    return parents;
+  }
+
+  /**
+   * Returns the element in a table by id.
+   * @param tbody
+   * @param id
+   * @returns {any}
+   */
+  getElementInTbodyById (tbody, id) {
+    return Array.from(tbody.children).find(row => row.dataset.id === id);
+  }
+
 }
 
+/**
+ * The list of included validators for the implementor to use.
+ */
 TableDrag.validators = {
   tree: Tree,
   maxDepth: MaxDepth

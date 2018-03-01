@@ -14,8 +14,10 @@ export default class MaxDepth {
     this.options = Object.assign(defaultOptions, options);
 
     this.tableDrag.table.addEventListener('isValidTransition', (event) => {
-      event.detail.rows.forEach((row) => {
-        if (row.depth > this.options.max) {
+      let rows = event.detail.rows;
+
+      rows.forEach((row) => {
+        if (parseInt(row.dataset.depth) > this.options.max) {
           event.preventDefault();
         }
       });

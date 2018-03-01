@@ -14,20 +14,17 @@ export default class Tree {
     this.options = Object.assign(defaultOptions, options);
 
     this.tableDrag.table.addEventListener('isValidTransition', (event) => {
-      let previousRow = null;
-      event.detail.rows.forEach((row) => {
-        if (previousRow) {
-          if (previousRow.depth <  row.depth - 1) {
-            event.preventDefault();
-          }
-        }
+      let rows = event.detail.rows;
 
+      // Do not allow children with parent depth + 2 or more.
+      let previousRow = null;
+      rows.forEach((row) => {
+        if (previousRow && parseInt(previousRow.dataset.depth) <  parseInt(row.dataset.depth) - 1) event.preventDefault();
         previousRow = row;
       });
 
-      if (event.detail.rows[0].depth !== 0) {
-        event.preventDefault();
-      }
+      // Do not allow the first row to have a depth.
+      if (parseInt(rows[0].dataset.depth) !== 0) event.preventDefault();
     });
   }
 }

@@ -10,17 +10,26 @@ export default class Row {
 
     this.tableDrag = tableDrag;
     this.element = rowElement;
-    if (!this.element.dataset.id) this.element.dataset.id = this.guid();
+    if (!this.id) this.id = this.guid();
     this.element.draggable = true;
     this.dragCssClass = this.tableDrag.options.dragCssClass;
     this.dragCssChildClass = this.tableDrag.options.dragCssChildClass;
     this.calculateRect();
+    this.children = [];
 
     this.element.addEventListener('dragstart', (event) => this.dragStart(event), false);
     this.element.addEventListener('dragend', (event) => this.dragEnd(event), false);
     this.element.addEventListener('drop', (event) => this.drop(event), false);
     this.element.addEventListener('mousedown', (event) => this.mouseDown(event), false);
     this.element.addEventListener('mouseup', (event) => this.mouseUp(event), false);
+  }
+
+  set id (id) {
+    this.element.dataset.id = id;
+  }
+
+  get id () {
+    return this.element.dataset.id;
   }
 
   /**
@@ -43,7 +52,7 @@ export default class Row {
    */
   mouseDown (event) {
     this.element.classList.add(this.dragCssClass);
-    this.getChildren().forEach((child) => child.classList.add(this.dragCssChildClass));
+    this.children.forEach((child) => child.classList.add(this.dragCssChildClass));
   }
 
   /**
@@ -52,7 +61,7 @@ export default class Row {
    */
   mouseUp (event) {
     this.element.classList.remove(this.dragCssClass);
-    this.getChildren().forEach((child) => child.classList.remove(this.dragCssChildClass));
+    this.children.forEach((child) => child.classList.remove(this.dragCssChildClass));
   }
 
   /**
@@ -60,53 +69,26 @@ export default class Row {
    * @param event
    */
   dragStart (event) {
-    this.tableDrag.updateTableDataStart();
+    this.children = this.tableDrag.getChildren(this.tableDrag.tbody, this.id);
     event.dataTransfer.effectAllowed = 'none';
     let dragIcon = document.createElement('img');
     dragIcon.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     event.dataTransfer.setDragImage(dragIcon, 0, 0);
-    event.dataTransfer.setData('tableRowId', this.element.dataset.id);
+    event.dataTransfer.setData('tableRowId', this.id);
     event.dataTransfer.setData('tableRowStartX', event.pageX);
     event.dataTransfer.setData('tableRowStartDepth', this.element.dataset.depth);
-    let children = this.getChildren().map(child => {
-      let data = Object.assign({}, child.dataset);
+
+    let frozenChildData = this.children.map(row => {
+      let data = Object.assign({}, row.dataset);
       data.depth = parseInt(data.depth);
       data.weight = parseInt(data.weight);
       return data;
     });
-    event.dataTransfer.setData('tableRowChildren', JSON.stringify(children));
+
+    event.dataTransfer.setData('tableRowStartChildren', JSON.stringify(frozenChildData));
 
     this.element.classList.add(this.dragCssClass);
-    this.getChildren().forEach((child) => child.classList.add(this.dragCssChildClass));
-  }
-
-  /**
-   * Get all children from a row.
-   * @returns {Array}
-   */
-  getChildren () {
-    let parentRow = this.element;
-
-    let children = [];
-
-    let passedParentRow = false;
-    let passedAllChildren = false;
-
-    Array.from(this.tableDrag.tbody.children).forEach((row) => {
-      if (passedParentRow && row.dataset.depth <= parentRow.dataset.depth) {
-        passedAllChildren = true;
-      }
-
-      if (passedParentRow && !passedAllChildren) {
-        children.push(row);
-      }
-
-      if (row.dataset.id === parentRow.dataset.id) {
-        passedParentRow = true;
-      }
-    });
-
-    return children;
+    this.children.forEach((child) => child.classList.add(this.dragCssChildClass));
   }
 
   /**
@@ -115,7 +97,8 @@ export default class Row {
    */
   dragEnd (event) {
     this.element.classList.remove(this.dragCssClass);
-    this.getChildren().forEach((child) => child.classList.remove(this.dragCssChildClass));
+    this.children.forEach((child) => child.classList.remove(this.dragCssChildClass));
+    this.children = [];
   }
 
   /**
