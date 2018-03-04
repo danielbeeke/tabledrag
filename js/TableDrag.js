@@ -32,6 +32,19 @@ export default class TableDrag {
     this.table.addEventListener('dragover', (event) => this.dragOver(event), false);
     this.rows = Array.from(this.tbody.children).map(row => new Row(row, this));
 
+    // Initiate the weight data attributes if not available.
+    if (!this.rows[0].element.dataset.weight) {
+      this.rows.forEach((row, delta) => {
+        row.element.dataset.weight = delta + 1;
+      });
+    }
+
+    // Initiate the depth data attributes if not available.
+    if (!this.rows[0].element.dataset.depth) {
+      this.rows.forEach(row => row.element.dataset.depth = 0);
+    }
+
+
     // Start all the validator plugins.
     this.options.validators.forEach((validatorItem) => {
       // Complex notation.
@@ -132,6 +145,9 @@ export default class TableDrag {
     // If validated execute the operations on the real table.
     if (this.isValidTransition(clonedTbody, draggedRow)) {
       operations.forEach((operation) => operation(this.tbody));
+
+      let changeEvent = new CustomEvent('change');
+      this.table.dispatchEvent(changeEvent);
     }
   }
 
@@ -236,3 +252,5 @@ TableDrag.validators = {
   tree: Tree,
   maxDepth: MaxDepth
 };
+
+window.TableDrag = TableDrag;

@@ -35,7 +35,7 @@ export default class Row {
   /**
    * After doing changes to the DOM we need to recalculate things for this row.
    */
-  postTransition (delta) {
+  postTransition () {
     this.calculateRect();
   }
 
@@ -52,6 +52,7 @@ export default class Row {
    */
   mouseDown (event) {
     this.element.classList.add(this.dragCssClass);
+    this.children = this.tableDrag.getChildren(this.tableDrag.tbody, this.id);
     this.children.forEach((child) => child.classList.add(this.dragCssChildClass));
   }
 
@@ -71,9 +72,20 @@ export default class Row {
   dragStart (event) {
     this.children = this.tableDrag.getChildren(this.tableDrag.tbody, this.id);
     event.dataTransfer.effectAllowed = 'none';
-    let dragIcon = document.createElement('img');
-    dragIcon.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-    event.dataTransfer.setDragImage(dragIcon, 0, 0);
+
+    let div = document.createElement('div');
+    div.style = `
+      width: 10px; 
+      height: 10px; 
+      position fixed;
+      top: -100000px;
+      left: -100000px;
+      border: 2px solid rgba(0,0,0,0);
+    `;
+
+    document.body.appendChild(div);
+    event.dataTransfer.setDragImage(div, 0, 0);
+
     event.dataTransfer.setData('tableRowId', this.id);
     event.dataTransfer.setData('tableRowStartX', event.pageX);
     event.dataTransfer.setData('tableRowStartDepth', this.element.dataset.depth);
