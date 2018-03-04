@@ -74,6 +74,7 @@ export default class Row {
     event.dataTransfer.effectAllowed = 'none';
 
     let div = document.createElement('div');
+    window.tableDragDiv = div;
     div.style = `
       width: 10px; 
       height: 10px; 
@@ -111,6 +112,8 @@ export default class Row {
     this.element.classList.remove(this.dragCssClass);
     this.children.forEach((child) => child.classList.remove(this.dragCssChildClass));
     this.children = [];
+    window.tableDragDiv.remove();
+    delete window.tableDragDiv;
   }
 
   /**

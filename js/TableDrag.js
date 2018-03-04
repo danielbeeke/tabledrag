@@ -3,6 +3,7 @@ import Row from './TableDrag.row.js';
 // Included validators.
 import Tree from './TableDrag.validator.tree.js';
 import MaxDepth from './TableDrag.validator.maxDepth.js';
+import Types from './TableDrag.validator.types.js';
 
 /**
  * Defaults for the tableDrag.
@@ -162,7 +163,9 @@ export default class TableDrag {
       cancelable: true,
       detail: {
         rows: Array.from(simulatedTbody.children),
-        draggedRow: draggedRow
+        draggedRow: draggedRow,
+        tableDrag: this,
+        simulatedTbody: simulatedTbody
       }
     });
 
@@ -250,7 +253,8 @@ export default class TableDrag {
  */
 TableDrag.validators = {
   tree: Tree,
-  maxDepth: MaxDepth
+  maxDepth: MaxDepth,
+  types: Types
 };
 
 window.TableDrag = TableDrag;
